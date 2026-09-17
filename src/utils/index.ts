@@ -55,6 +55,24 @@ export function removeUserInfo(): void {
   localStorage.removeItem(USER_INFO_KEY)
 }
 
+// ==================== 枚举翻译 ====================
+
+/**
+ * 枚举字典翻译
+ * 按映射表把原始值翻译为展示文案，未命中时回退为原值本身，
+ * 避免导出/展示时出现 undefined。
+ * @param value 原始值，如 row.status
+ * @param map   映射字典，如 { '1': '可借阅', '2': '已借出' }
+ */
+export function translateEnum(
+  value: string | number | null | undefined,
+  map: Record<string, string>
+): string {
+  if (value === null || value === undefined) return ''
+  const key = String(value)
+  return map[key] ?? key
+}
+
 // ==================== Excel 导出 ====================
 
 export interface ExportOptions {

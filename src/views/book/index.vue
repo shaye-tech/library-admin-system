@@ -159,7 +159,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type TableInstance } from 'element-plus'
 import { Search, Refresh, Plus, Delete, Download } from '@element-plus/icons-vue'
 import { getBookList, deleteBook, batchDeleteBooks } from '@/apis/request'
-import { exportToExcel } from '@/utils'
+import { exportToExcel, translateEnum } from '@/utils'
 import type { Book, BookQueryParams } from '@/types'
 import BookForm from '@/components/BookForm.vue'
 
