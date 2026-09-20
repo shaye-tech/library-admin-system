@@ -1,5 +1,4 @@
 <template>
-  <!-- 404 页面 -->
   <div class="not-found-container">
     <div class="not-found-content">
       <h1 class="error-code">404</h1>
@@ -14,20 +13,15 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 404 页面组件
- * 处理异常路由访问
- */
+// 路由没匹配上就落到这个页面
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// 返回首页
 function goHome() {
   router.push('/')
 }
 
-// 返回上一页
 function goBack() {
   router.back()
 }

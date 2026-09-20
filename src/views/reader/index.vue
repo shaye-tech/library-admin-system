@@ -1,7 +1,5 @@
 <template>
-  <!-- 读者管理列表页 -->
   <div class="reader-list-container">
-    <!-- 搜索筛选区域 -->
     <el-card class="search-card" shadow="never">
       <el-form :model="queryParams" :inline="true" label-width="80px">
         <el-form-item label="姓名">
@@ -53,7 +51,6 @@
       </el-form>
     </el-card>
 
-    <!-- 操作按钮 + 数据表格 -->
     <el-card class="table-card" shadow="never">
       <div class="table-toolbar">
         <div class="toolbar-left">
@@ -120,7 +117,6 @@
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
       <div class="pagination-area">
         <el-pagination
           v-model:current-page="queryParams.pageNum"
@@ -135,7 +131,6 @@
       </div>
     </el-card>
 
-    <!-- 新增/编辑弹窗（复用表单组件） -->
     <reader-form
       v-model:visible="dialogVisible"
       :form-data="currentRow"
@@ -143,7 +138,6 @@
       @success="getList"
     />
 
-    <!-- 借阅弹窗 -->
     <el-dialog v-model="borrowDialogVisible" title="图书借阅" width="480px" :close-on-click-modal="false">
       <el-form ref="borrowFormRef" :model="borrowForm" :rules="borrowRules" label-width="90px">
         <el-form-item label="读者姓名">
@@ -176,10 +170,7 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 读者管理列表页
- * 实现条件筛选、弹窗式新增编辑、单条删除、批量删除完整业务闭环
- */
+// 读者列表页，除了一般的增删改查，还带个借书弹窗
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type TableInstance, type FormInstance, type FormRules } from 'element-plus'
 import { Search, Refresh, Plus, Delete, Download } from '@element-plus/icons-vue'
@@ -199,7 +190,6 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const currentRow = ref<Reader | null>(null)
 
-// 借阅相关
 const borrowDialogVisible = ref(false)
 const borrowLoading = ref(false)
 const borrowFormRef = ref<FormInstance>()
@@ -229,7 +219,6 @@ const queryParams = reactive<ReaderQueryParams>({
   department: ''
 })
 
-// 获取列表
 async function getList() {
   loading.value = true
   try {
@@ -286,12 +275,11 @@ function handleDetail(row: Reader) {
   window.open(`/reader/detail/${row.id}`, '_blank')
 }
 
-// 打开借阅弹窗
+// 借阅弹窗里只列还有库存的书
 async function handleBorrow(row: Reader) {
   currentReader.value = row
   borrowForm.bookId = null
   borrowForm.borrowDays = 30
-  // 加载可借阅图书列表
   try {
     const res: any = await getBookList({ pageNum: 1, pageSize: 100 })
     if (res.code === 200) {
@@ -303,7 +291,7 @@ async function handleBorrow(row: Reader) {
   borrowDialogVisible.value = true
 }
 
-// 提交借阅
+// 借书成功得刷新列表，读者身上的借阅数和图书库存都变了
 async function submitBorrow() {
   if (!borrowFormRef.value || !currentReader.value || !borrowForm.bookId) return
   try {
@@ -328,7 +316,7 @@ async function submitBorrow() {
   }
 }
 
-// 单条删除（高危操作确认）
+// 删除前确认，用户取消会进 catch
 async function handleDelete(row: Reader) {
   try {
     await ElMessageBox.confirm(
@@ -344,7 +332,6 @@ async function handleDelete(row: Reader) {
   } catch { /* 用户取消 */ }
 }
 
-// 批量删除（高危操作确认）
 async function handleBatchDelete() {
   if (selectedIds.value.length === 0) {
     ElMessage.warning('请先选择要删除的记录')
@@ -365,7 +352,6 @@ async function handleBatchDelete() {
   } catch { /* 用户取消 */ }
 }
 
-// 导出Excel
 function handleExport() {
   if (tableData.value.length === 0) {
     ElMessage.warning('没有可导出的数据')

@@ -1,7 +1,5 @@
 <template>
-  <!-- 首页仪表盘 -->
   <div class="dashboard-container">
-    <!-- 欢迎横幅 -->
     <el-card class="welcome-card" shadow="never">
       <div class="welcome-content">
         <div>
@@ -12,7 +10,6 @@
       </div>
     </el-card>
 
-    <!-- 数据统计卡片 -->
     <el-row :gutter="20" class="stat-row">
       <el-col :span="6">
         <el-card class="stat-card" shadow="hover">
@@ -68,7 +65,6 @@
       </el-col>
     </el-row>
 
-    <!-- 快捷操作 -->
     <el-card class="quick-card" shadow="never">
       <template #header>
         <span>快捷操作</span>
@@ -98,10 +94,7 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 首页仪表盘组件
- * 展示系统概览数据和快捷操作入口
- */
+// 首页，四个统计数字加一排快捷入口
 import { ref, onMounted } from 'vue'
 import { Reading, User, CircleCheck, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores'
@@ -111,10 +104,8 @@ import { getRoleList } from '@/apis/request'
 
 const userStore = useUserStore()
 
-// 当前日期
 const currentDate = ref('')
 
-// 统计数据
 const stats = ref({
   bookTotal: 0,
   readerTotal: 0,
@@ -122,10 +113,9 @@ const stats = ref({
   roleTotal: 0
 })
 
-// 加载统计数据
+// 三个模块一起发请求，pageSize 给大值是因为 Mock 里没有专门的总数接口
 async function loadStats() {
   try {
-    // 并行加载各模块数据
     const [bookRes, readerRes, roleRes]: any = await Promise.all([
       getBookList({ pageNum: 1, pageSize: 1000 }),
       getReaderList({ pageNum: 1, pageSize: 1000 }),

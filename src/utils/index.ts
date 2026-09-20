@@ -1,10 +1,5 @@
-/**
- * 通用工具函数
- * 包含ID生成、Token持久化、Excel导出等工具
- */
+// 杂项工具，ID 生成、token 存取、Excel 导出都在这儿
 import * as XLSX from 'xlsx'
-
-// ==================== 通用工具 ====================
 
 export function generateId(): number {
   return Date.now() + Math.floor(Math.random() * 1000)
@@ -18,8 +13,7 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`
 }
 
-// ==================== Token 与用户信息持久化 ====================
-
+// token 和用户信息都塞在 localStorage 里
 const TOKEN_KEY = 'library_admin_token'
 const USER_INFO_KEY = 'library_admin_user_info'
 
@@ -55,15 +49,7 @@ export function removeUserInfo(): void {
   localStorage.removeItem(USER_INFO_KEY)
 }
 
-// ==================== 枚举翻译 ====================
-
-/**
- * 枚举字典翻译
- * 按映射表把原始值翻译为展示文案，未命中时回退为原值本身，
- * 避免导出/展示时出现 undefined。
- * @param value 原始值，如 row.status
- * @param map   映射字典，如 { '1': '可借阅', '2': '已借出' }
- */
+// 按字典把枚举值翻成中文，查不到就原样返回，免得列表和导出里出现 undefined
 export function translateEnum(
   value: string | number | null | undefined,
   map: Record<string, string>
@@ -72,8 +58,6 @@ export function translateEnum(
   const key = String(value)
   return map[key] ?? key
 }
-
-// ==================== Excel 导出 ====================
 
 export interface ExportOptions {
   filename: string

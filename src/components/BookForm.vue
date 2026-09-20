@@ -1,5 +1,4 @@
 <template>
-  <!-- 图书新增/编辑表单弹窗（复用组件） -->
   <el-dialog
     v-model="visible"
     :title="isEdit ? '编辑图书' : '新增图书'"
@@ -131,46 +130,35 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 图书新增/编辑表单复用组件
- * 通过 props 区分新增和编辑业务逻辑
- * 包含完整表单校验、文件上传、接口提交
- */
+// 图书表单，新增和编辑共用一个，靠 isEdit 区分
 import { ref, reactive, watch, computed } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { addBook, updateBook } from '@/apis/request'
 import type { BookFormData } from '@/types'
 
-// Props
 const props = defineProps<{
   visible: boolean
   formData: BookFormData | null
   isEdit: boolean
 }>()
 
-// Emits
 const emit = defineEmits<{
   (e: 'update:visible', value: boolean): void
   (e: 'success'): void
 }>()
 
-// 弹窗显示状态（双向绑定）
+// 弹窗开关实际存在父组件，这里做一层透传
 const visible = computed({
   get: () => props.visible,
   set: (val) => emit('update:visible', val)
 })
 
-// 表单引用
 const formRef = ref<FormInstance>()
-
-// 提交加载状态
 const submitLoading = ref(false)
 
-// 分类选项
 const categoryOptions = ['文学', '科学', '技术', '历史', '教育', '艺术', '经济', '其他']
 
-// 表单数据
 const formData = reactive<BookFormData>({
   isbn: '',
   title: '',
@@ -186,7 +174,6 @@ const formData = reactive<BookFormData>({
   location: ''
 })
 
-// 表单校验规则
 const formRules: FormRules = {
   isbn: [
     { required: true, message: '请输入ISBN', trigger: 'blur' },
@@ -203,20 +190,17 @@ const formRules: FormRules = {
   location: [{ required: true, message: '请输入馆藏位置', trigger: 'blur' }]
 }
 
-// 监听弹窗打开，初始化表单数据
+// 打开弹窗时重新填一遍表单，不然残留的是上一次的数据
 watch(() => props.visible, (val) => {
   if (val) {
     if (props.isEdit && props.formData) {
-      // 编辑模式：回填数据
       Object.assign(formData, props.formData)
     } else {
-      // 新增模式：重置表单
       resetForm()
     }
   }
 })
 
-// 重置表单
 function resetForm() {
   Object.assign(formData, {
     isbn: '', title: '', author: '', publisher: '', publishDate: '',
@@ -226,7 +210,7 @@ function resetForm() {
   formRef.value?.clearValidate()
 }
 
-// 封面上传前校验
+// 封面只收图片，且不超过 5MB
 function beforeCoverUpload(file: File) {
   const isImage = file.type.startsWith('image/')
   const isLt5M = file.size / 1024 / 1024 < 5
@@ -241,7 +225,7 @@ function beforeCoverUpload(file: File) {
   return true
 }
 
-// 处理封面上传
+// 没后端，直接把图片读成 base64 存进表单
 function handleCoverUpload(options: any) {
   const reader = new FileReader()
   reader.onload = (e) => {
@@ -251,16 +235,14 @@ function handleCoverUpload(options: any) {
   reader.readAsDataURL(options.file)
 }
 
-// 提交表单
+// 编辑走 updateBook，新增走 addBook
 async function handleSubmit() {
   if (!formRef.value) return
   try {
-    // 表单校验
     await formRef.value.validate()
     submitLoading.value = true
 
     if (props.isEdit) {
-      // 编辑：调用更新接口
       const res: any = await updateBook(formData)
       if (res.code === 200) {
         ElMessage.success('更新成功')
@@ -268,7 +250,6 @@ async function handleSubmit() {
         visible.value = false
       }
     } else {
-      // 新增：调用新增接口
       const res: any = await addBook(formData)
       if (res.code === 200) {
         ElMessage.success('新增成功')
@@ -285,7 +266,6 @@ async function handleSubmit() {
   }
 }
 
-// 弹窗关闭后重置
 function handleClosed() {
   resetForm()
 }

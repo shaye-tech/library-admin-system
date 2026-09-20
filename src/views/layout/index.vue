@@ -1,7 +1,5 @@
 <template>
-  <!-- 系统布局组件：侧边栏 + 顶部导航 + 内容区 -->
   <el-container class="layout-container">
-    <!-- 侧边栏 -->
     <el-aside :width="isCollapse ? '64px' : '220px'" class="layout-aside">
       <div class="logo-area">
         <el-icon :size="28" color="#fff"><Reading /></el-icon>
@@ -16,13 +14,12 @@
         text-color="#bfcbd9"
         active-text-color="#409eff"
       >
-        <!-- 首页 -->
         <el-menu-item index="/dashboard">
           <el-icon><House /></el-icon>
           <template #title>首页</template>
         </el-menu-item>
 
-        <!-- 动态菜单（根据权限渲染） -->
+        <!-- 菜单是登录后按权限过滤出来的，存 permission store 里 -->
         <template v-for="menu in permissionStore.menuList" :key="menu.path">
           <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.path">
             <template #title>
@@ -45,17 +42,13 @@
       </el-menu>
     </el-aside>
 
-    <!-- 右侧主区域 -->
     <el-container>
-      <!-- 顶部导航栏 -->
       <el-header class="layout-header">
         <div class="header-left">
-          <!-- 折叠按钮 -->
           <el-icon class="collapse-btn" :size="20" @click="toggleCollapse">
             <Fold v-if="!isCollapse" />
             <Expand v-else />
           </el-icon>
-          <!-- 面包屑 -->
           <el-breadcrumb separator="/">
             <el-breadcrumb-item :to="{ path: '/dashboard' }">首页</el-breadcrumb-item>
             <el-breadcrumb-item v-if="route.meta.title && route.path !== '/dashboard'">
@@ -65,7 +58,6 @@
         </div>
 
         <div class="header-right">
-          <!-- 用户信息 -->
           <el-dropdown @command="handleCommand">
             <span class="user-info">
               <el-avatar :size="32" :icon="UserFilled" />
@@ -86,7 +78,6 @@
         </div>
       </el-header>
 
-      <!-- 内容区域 -->
       <el-main class="layout-main">
         <router-view />
       </el-main>
@@ -95,10 +86,7 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 系统布局组件
- * 包含侧边栏导航（动态菜单渲染）、顶部导航栏（面包屑、用户信息、退出登录）、内容区
- */
+// 主布局，左边菜单顶栏内容区
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
@@ -115,38 +103,31 @@ const router = useRouter()
 const userStore = useUserStore()
 const permissionStore = usePermissionStore()
 
-// 侧边栏折叠状态
 const isCollapse = ref(false)
 
-// 当前激活的菜单
 const activeMenu = computed(() => route.path)
 
-// 切换侧边栏折叠
 function toggleCollapse() {
   isCollapse.value = !isCollapse.value
 }
 
-// 处理用户下拉菜单命令
 async function handleCommand(command: string) {
   if (command === 'logout') {
-    // 退出登录确认
     try {
       await ElMessageBox.confirm('确定要退出登录吗？', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       })
-      // 执行退出登录
       await userStore.logout()
-      // 重置路由（清除动态路由，防止权限残留）
+      // 动态路由是登录时按权限加进去的，退出必须清干净，否则换个账号进来还是旧权限
       resetRouter()
       resetRouteLoaded()
-      // 重置权限状态
       permissionStore.resetPermission()
       ElMessage.success('已退出登录')
       router.push('/login')
     } catch {
-      // 用户取消退出
+      // 用户取消
     }
   } else if (command === 'profile') {
     ElMessage.info('个人中心功能开发中')
@@ -233,7 +214,6 @@ async function handleCommand(command: string) {
   overflow-y: auto;
 }
 
-/* 路由切换动画 */
 .fade-transform-enter-active,
 .fade-transform-leave-active {
   transition: all 0.3s;

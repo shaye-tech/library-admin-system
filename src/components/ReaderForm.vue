@@ -1,5 +1,4 @@
 <template>
-  <!-- 读者新增/编辑表单弹窗（复用组件） -->
   <el-dialog
     v-model="visible"
     :title="isEdit ? '编辑读者' : '新增读者'"
@@ -112,10 +111,7 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 读者新增/编辑表单复用组件
- * 区分新增、编辑业务逻辑，包含完整表单校验
- */
+// 读者表单，新增和编辑共用一个
 import { ref, reactive, watch, computed } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { addReader, updateReader } from '@/apis/request'

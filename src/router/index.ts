@@ -1,14 +1,11 @@
-/**
- * 路由配置与全局守卫
- * 包含静态路由、动态路由、404路由、路由鉴权守卫
- */
+// 路由表 + 登录鉴权守卫
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import Layout from '@/views/layout/index.vue'
 import { useUserStore, usePermissionStore } from '@/stores'
 import { getToken } from '@/utils'
 
-// ==================== 静态路由 ====================
+// 不用校验权限的路由，登录页和主布局都在这里
 export const constantRoutes: RouteRecordRaw[] = [
   {
     path: '/login',
@@ -32,7 +29,7 @@ export const constantRoutes: RouteRecordRaw[] = [
   }
 ]
 
-// ==================== 动态路由 ====================
+// 要按权限挂载的路由，守卫里 addRoute 上去，path 和 meta.permissions 是对应的
 export const asyncRoutes: RouteRecordRaw[] = [
   {
     path: '/book',
@@ -90,7 +87,7 @@ export const asyncRoutes: RouteRecordRaw[] = [
   }
 ]
 
-// ==================== 404 路由 ====================
+// 404 先不挂上去，等动态路由加完了再挂，不然它会把后面的路由都吃掉
 export const notFoundRoute: RouteRecordRaw = {
   path: '/:pathMatch(.*)*',
   name: 'NotFound',
@@ -98,14 +95,13 @@ export const notFoundRoute: RouteRecordRaw = {
   meta: { title: '404', hidden: true }
 }
 
-// ==================== 创建路由实例 ====================
 const router = createRouter({
   history: createWebHistory(),
   routes: constantRoutes,
   scrollBehavior: () => ({ top: 0 })
 })
 
-// ==================== 路由加载标志 ====================
+// 动态路由挂没挂上的标记，守卫靠它判断要不要重新挂一次
 export let routeLoaded = false
 
 export function setRouteLoaded(val: boolean): void {
@@ -116,7 +112,8 @@ export function resetRouteLoaded(): void {
   routeLoaded = false
 }
 
-// ==================== 路由重置 ====================
+// 退出登录要把动态路由清掉，vue-router 没有提供移除路由的接口，
+// 只能另建一个实例，拿它的 matcher 把当前这个覆盖掉
 export function resetRouter() {
   const newRouter = createRouter({
     history: createWebHistory(),
@@ -125,14 +122,13 @@ export function resetRouter() {
   ;(router as any).matcher = (newRouter as any).matcher
 }
 
-// 动态添加 404 路由
 export function addNotFoundRoute() {
   if (!router.hasRoute('NotFound')) {
     router.addRoute(notFoundRoute)
   }
 }
 
-// ==================== 全局路由守卫 ====================
+// 没登录就赶去登录页；登录了但动态路由还没挂，先挂上再重新导航一次
 const whiteList = ['/login']
 
 router.beforeEach(async (to, from, next) => {

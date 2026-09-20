@@ -1,7 +1,4 @@
-/**
- * 状态管理仓库
- * 包含用户状态（登录、权限）和权限状态（动态路由、菜单）
- */
+// Pinia store：登录用户一个，权限路由和菜单一个
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { RouteRecordRaw } from 'vue-router'
@@ -10,7 +7,7 @@ import { login as loginApi, logout as logoutApi } from '@/apis/request'
 import { setToken, removeToken, setUserInfo, removeUserInfo, getToken } from '@/utils'
 import { asyncRoutes } from '@/router'
 
-// ==================== 用户 Store ====================
+// 登录用户的信息、token、权限码
 export const useUserStore = defineStore('user', () => {
   const userInfo = ref<UserInfo | null>(null)
   const token = ref<string>(getToken() || '')
@@ -79,7 +76,7 @@ export const useUserStore = defineStore('user', () => {
   }
 })
 
-// ==================== 权限 Store ====================
+// 拿权限码把 asyncRoutes 过滤一遍，留下的再转成左侧菜单
 export const usePermissionStore = defineStore('permission', () => {
   const dynamicRoutes = ref<RouteRecordRaw[]>([])
   const menuList = ref<RouteMenuItem[]>([])

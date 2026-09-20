@@ -1,9 +1,5 @@
-/**
- * 全局类型定义
- * 包含 API 响应、图书、读者、角色、用户等业务类型
- */
+// 全局类型定义，接口返回和几个业务实体都在这儿
 
-// ==================== 通用 API 类型 ====================
 export interface ApiResponse<T = any> {
   code: number
   message: string
@@ -22,7 +18,6 @@ export interface PageResult<T> {
   pageSize: number
 }
 
-// ==================== 图书相关类型 ====================
 export interface Book {
   id: number
   isbn: string
@@ -78,7 +73,6 @@ export interface BorrowRecord {
   renewCount: number
 }
 
-// ==================== 读者相关类型 ====================
 export interface Reader {
   id: number
   readerNo: string
@@ -121,7 +115,6 @@ export interface ReaderFormData {
   remark: string
 }
 
-// ==================== 角色与权限相关类型 ====================
 export interface PermissionNode {
   id: number
   parentId: number
@@ -160,7 +153,7 @@ export interface RoleFormData {
   permissionIds: number[]
 }
 
-// 路由菜单项（动态路由）
+// 左侧菜单的类型，字段和路由 meta 基本对得上
 export interface RouteMenuItem {
   path: string
   name: string
@@ -176,7 +169,6 @@ export interface RouteMenuItem {
   children?: RouteMenuItem[]
 }
 
-// ==================== 用户相关类型 ====================
 export interface LoginParams {
   username: string
   password: string

@@ -1,11 +1,7 @@
-/**
- * Mock 数据服务层
- * 使用 localStorage 模拟后端数据持久化，使前端项目可独立运行
- */
+// 假后端。数据放 localStorage，刷新不丢，没接后端也能把功能跑通
 import type { Book, BorrowRecord, Reader, Role, PermissionNode, UserInfo } from '@/types'
 import { generateId } from '@/utils'
 
-// ==================== 数据存储键名 ====================
 const STORAGE_KEYS = {
   BOOKS: 'mock_books',
   READERS: 'mock_readers',
@@ -15,7 +11,6 @@ const STORAGE_KEYS = {
   INITIALIZED: 'mock_initialized'
 }
 
-// ==================== 通用存储工具 ====================
 function getStorage<T>(key: string, defaultValue: T): T {
   const data = localStorage.getItem(key)
   if (data) {
@@ -32,16 +27,15 @@ function setStorage<T>(key: string, value: T): void {
   localStorage.setItem(key, JSON.stringify(value))
 }
 
-// 模拟网络延迟
+// 假装有网络延迟，不然 loading 一闪而过根本看不见
 function delay<T>(data: T, ms = 300): Promise<T> {
   return new Promise((resolve) => setTimeout(() => resolve(data), ms))
 }
 
-// ==================== 初始数据 ====================
+// 第一次打开时灌的初始数据，之后都从 localStorage 读
 function initMockData(): void {
   if (localStorage.getItem(STORAGE_KEYS.INITIALIZED)) return
 
-  // 初始图书数据
   const books: Book[] = [
     {
       id: 1, isbn: '9787020002207', title: '红楼梦', author: '曹雪芹',
@@ -101,7 +95,6 @@ function initMockData(): void {
     }
   ]
 
-  // 初始读者数据
   const readers: Reader[] = [
     {
       id: 1, readerNo: '2024001', name: '张三', gender: '男', type: '学生',
@@ -140,7 +133,6 @@ function initMockData(): void {
     }
   ]
 
-  // 初始角色数据
   const roles: Role[] = [
     {
       id: 1, roleName: '超级管理员', roleCode: 'admin', description: '拥有系统所有权限',
@@ -159,7 +151,6 @@ function initMockData(): void {
     }
   ]
 
-  // 初始借阅记录
   const borrowRecords: BorrowRecord[] = [
     {
       id: 1, bookId: 5, bookTitle: '百年孤独', readerId: 1, readerName: '张三',
@@ -173,7 +164,6 @@ function initMockData(): void {
     }
   ]
 
-  // 初始用户
   const users: UserInfo[] = [
     {
       id: 1, username: 'admin', nickname: '系统管理员', avatar: '',
@@ -200,10 +190,10 @@ function initMockData(): void {
   localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true')
 }
 
-// 初始化（模块加载时执行）
+// 模块一加载就执行，已经初始化过就直接跳过，免得把改过的数据冲掉
 initMockData()
 
-// ==================== 权限树数据 ====================
+// 权限树，角色表单里那棵树用的，父子关系靠 parentId
 export const permissionTree: PermissionNode[] = [
   {
     id: 1, parentId: 0, name: '图书管理', code: 'book', type: 'menu', path: '/book', icon: 'Reading', sort: 1,
@@ -234,9 +224,7 @@ export const permissionTree: PermissionNode[] = [
   }
 ]
 
-// ==================== 导出 Mock 服务 ====================
 export const mockService = {
-  // ---- 认证相关 ----
   login(username: string, password: string) {
     const users = getStorage<UserInfo[]>(STORAGE_KEYS.USERS, [])
     const user = users.find((u) => u.username === username)
@@ -247,18 +235,16 @@ export const mockService = {
       return delay({ code: 401, message: '密码错误', data: null })
     }
     const token = `mock_token_${Date.now()}_${Math.random().toString(36).slice(2)}`
-    // 返回时不包含密码字段
+    // 密码别往前端传
     const { password: _, ...userInfoWithoutPassword } = user
     return delay({ code: 200, message: '登录成功', data: { token, userInfo: userInfoWithoutPassword } })
   },
 
-  // 获取所有用户列表（用于密码管理）
   getUserListForManage() {
     const users = getStorage<UserInfo[]>(STORAGE_KEYS.USERS, [])
     return delay({ code: 200, message: 'success', data: users })
   },
 
-  // 管理员修改用户密码
   changeUserPassword(userId: number, newPassword: string) {
     const users = getStorage<UserInfo[]>(STORAGE_KEYS.USERS, [])
     const index = users.findIndex((u) => u.id === userId)
@@ -270,7 +256,6 @@ export const mockService = {
     return delay({ code: 200, message: '密码修改成功', data: null })
   },
 
-  // ---- 图书 CRUD ----
   getBookList(params: any) {
     let books = getStorage<Book[]>(STORAGE_KEYS.BOOKS, [])
     if (params.title) books = books.filter((b) => b.title.includes(params.title))
@@ -327,14 +312,13 @@ export const mockService = {
     return delay({ code: 200, message: 'success', data: list })
   },
 
-  // 获取读者的借阅记录
   getReaderBorrowRecords(readerId: number) {
     const records = getStorage<BorrowRecord[]>(STORAGE_KEYS.BORROW_RECORDS, [])
     const list = records.filter((r) => r.readerId === readerId)
     return delay({ code: 200, message: 'success', data: list })
   },
 
-  // 添加借阅记录（借书）
+  // 借书，库存、可借数、读者已借数量三边都要检查
   addBorrowRecord(data: { bookId: number; readerId: number; borrowDays: number }) {
     const records = getStorage<BorrowRecord[]>(STORAGE_KEYS.BORROW_RECORDS, [])
     const books = getStorage<Book[]>(STORAGE_KEYS.BOOKS, [])
@@ -375,14 +359,13 @@ export const mockService = {
     records.unshift(newRecord)
     setStorage(STORAGE_KEYS.BORROW_RECORDS, records)
 
-    // 更新图书库存
+    // 库存 -1
     const bookIndex = books.findIndex((b) => b.id === data.bookId)
     if (bookIndex > -1) {
       books[bookIndex].availableCopies -= 1
       setStorage(STORAGE_KEYS.BOOKS, books)
     }
 
-    // 更新读者借阅数量
     const readerIndex = readers.findIndex((r) => r.id === data.readerId)
     if (readerIndex > -1) {
       readers[readerIndex].currentBorrowCount += 1
@@ -392,7 +375,6 @@ export const mockService = {
     return delay({ code: 200, message: '借阅成功', data: newRecord })
   },
 
-  // 归还图书
   returnBook(recordId: number) {
     const records = getStorage<BorrowRecord[]>(STORAGE_KEYS.BORROW_RECORDS, [])
     const books = getStorage<Book[]>(STORAGE_KEYS.BOOKS, [])
@@ -411,14 +393,13 @@ export const mockService = {
     record.status = '已归还'
     setStorage(STORAGE_KEYS.BORROW_RECORDS, records)
 
-    // 更新图书库存
+    // 还书是上面借书的反操作，库存加回去、已借数减回去
     const bookIndex = books.findIndex((b) => b.id === record.bookId)
     if (bookIndex > -1) {
       books[bookIndex].availableCopies += 1
       setStorage(STORAGE_KEYS.BOOKS, books)
     }
 
-    // 更新读者借阅数量
     const readerIndex = readers.findIndex((r) => r.id === record.readerId)
     if (readerIndex > -1) {
       readers[readerIndex].currentBorrowCount = Math.max(0, readers[readerIndex].currentBorrowCount - 1)
@@ -428,7 +409,6 @@ export const mockService = {
     return delay({ code: 200, message: '归还成功', data: record })
   },
 
-  // ---- 读者 CRUD ----
   getReaderList(params: any) {
     let readers = getStorage<Reader[]>(STORAGE_KEYS.READERS, [])
     if (params.name) readers = readers.filter((r) => r.name.includes(params.name))
@@ -480,7 +460,6 @@ export const mockService = {
     return delay({ code: 200, message: `成功删除${ids.length}条记录`, data: null })
   },
 
-  // ---- 角色 CRUD ----
   getRoleList(params: any) {
     let roles = getStorage<Role[]>(STORAGE_KEYS.ROLES, [])
     if (params.roleName) roles = roles.filter((r) => r.roleName.includes(params.roleName))

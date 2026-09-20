@@ -1,5 +1,4 @@
 <template>
-  <!-- 读者详情页 -->
   <div class="reader-detail-container" v-loading="loading">
     <div class="detail-header">
       <el-button :icon="ArrowLeft" @click="goBack">返回列表</el-button>
@@ -7,11 +6,9 @@
     </div>
 
     <template v-if="readerInfo">
-      <!-- 基本信息 -->
       <el-card class="info-card" shadow="never">
         <template #header><span class="card-title">基本信息</span></template>
         <div class="info-content">
-          <!-- 头像 -->
           <div class="reader-avatar">
             <el-avatar :size="100" :icon="UserFilled" />
             <h3 class="reader-name">{{ readerInfo.name }}</h3>
@@ -19,7 +16,6 @@
               {{ readerInfo.status }}
             </el-tag>
           </div>
-          <!-- 详细信息 -->
           <el-descriptions :column="2" border class="info-descriptions">
             <el-descriptions-item label="读者证号">{{ readerInfo.readerNo }}</el-descriptions-item>
             <el-descriptions-item label="性别">{{ readerInfo.gender }}</el-descriptions-item>
@@ -36,7 +32,6 @@
         </div>
       </el-card>
 
-      <!-- 借阅统计 -->
       <el-card class="stat-card" shadow="never">
         <template #header><span class="card-title">借阅统计</span></template>
         <el-row :gutter="20">
@@ -61,7 +56,6 @@
         </el-row>
       </el-card>
 
-      <!-- 操作按钮 -->
       <div class="action-area">
         <el-button type="primary" @click="handleEdit">编辑信息</el-button>
         <el-button type="danger" @click="handleDelete">注销读者</el-button>
@@ -71,10 +65,7 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 读者详情页
- * 展示读者详细信息、借阅统计
- */
+// 读者详情页，id 从路由参数里取
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -103,6 +94,7 @@ async function loadDetail() {
   }
 }
 
+// 编辑还是回列表页改，这里只改了弹窗的交互成本更高
 function handleEdit() {
   ElMessage.info('请在列表页点击编辑按钮进行修改')
 }

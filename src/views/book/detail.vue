@@ -1,20 +1,16 @@
 <template>
-  <!-- 图书详情页 -->
   <div class="book-detail-container" v-loading="loading">
-    <!-- 返回按钮 -->
     <div class="detail-header">
       <el-button :icon="ArrowLeft" @click="goBack">返回列表</el-button>
       <h2 class="detail-title">图书详情</h2>
     </div>
 
     <template v-if="bookInfo">
-      <!-- 基本信息卡片 -->
       <el-card class="info-card" shadow="never">
         <template #header>
           <span class="card-title">基本信息</span>
         </template>
         <div class="info-content">
-          <!-- 封面 -->
           <div class="book-cover">
             <el-image
               v-if="bookInfo.coverUrl"
@@ -26,7 +22,6 @@
               <el-icon :size="64" color="#c0c4cc"><Reading /></el-icon>
               <span>暂无封面</span>
             </div>
-            <!-- 封面上传 -->
             <el-upload
               class="cover-upload"
               :show-file-list="false"
@@ -40,7 +35,6 @@
             </el-upload>
           </div>
 
-          <!-- 详细信息 -->
           <el-descriptions :column="2" border class="info-descriptions">
             <el-descriptions-item label="书名">{{ bookInfo.title }}</el-descriptions-item>
             <el-descriptions-item label="ISBN">{{ bookInfo.isbn }}</el-descriptions-item>
@@ -65,12 +59,10 @@
         </div>
       </el-card>
 
-      <!-- 附件区域 -->
       <el-card class="attachment-card" shadow="never">
         <template #header>
           <div class="card-header-with-action">
             <span class="card-title">附件资料</span>
-            <!-- 文件上传 -->
             <el-upload
               :show-file-list="false"
               :before-upload="beforeFileUpload"
@@ -98,7 +90,7 @@
         </el-table>
       </el-card>
 
-      <!-- 借阅记录（子数据按需加载） -->
+      <!-- 借阅记录走的是另一个接口，和详情一起拉 -->
       <el-card class="record-card" shadow="never">
         <template #header>
           <div class="card-header-with-action">
@@ -143,10 +135,7 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 图书详情页
- * 实现详情展示、附件上传/预览/下载（Blob下载）、子数据（借阅记录）按需加载
- */
+// 图书详情页。附件里那两个示例 pdf/word 是前端临时拼出来的，没走后端
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -158,17 +147,14 @@ import type { Book, BorrowRecord } from '@/types'
 const route = useRoute()
 const router = useRouter()
 
-// 加载状态
 const loading = ref(false)
 const recordLoading = ref(false)
 
-// 图书信息
 const bookInfo = ref<Book | null>(null)
 
-// 借阅记录（子数据）
 const borrowRecords = ref<BorrowRecord[]>([])
 
-// 附件列表（包含真实文件内容，可正常预览和下载）
+// content 存的是真实 Blob，预览和下载才有东西可用
 interface AttachmentItem {
   name: string
   size: number
@@ -177,7 +163,7 @@ interface AttachmentItem {
   content: Blob
 }
 
-// 生成示例 PDF 文件（最小化 PDF 结构）
+// 手写一份最小结构的 PDF，省得为了演示附件再引一个库
 function generateSamplePDF(title: string, content: string): Blob {
   const pdfContent = `%PDF-1.4
 1 0 obj
@@ -220,7 +206,7 @@ startxref
   return new Blob([pdfContent], { type: 'application/pdf' })
 }
 
-// 生成示例 Word 文档（HTML 格式，Word 可打开）
+// Word 同样拼一段 HTML 存成 .doc，Word 能直接打开
 function generateSampleWord(title: string, content: string): Blob {
   const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
@@ -260,12 +246,10 @@ const attachments = ref<AttachmentItem[]>([
   }
 ])
 
-// 返回列表
 function goBack() {
   router.push('/book/index')
 }
 
-// 加载图书详情
 async function loadBookDetail() {
   const id = Number(route.params.id)
   if (!id) return
@@ -280,7 +264,6 @@ async function loadBookDetail() {
   }
 }
 
-// 加载借阅记录（子数据按需加载）
 async function loadBorrowRecords() {
   const id = Number(route.params.id)
   if (!id) return
@@ -295,7 +278,7 @@ async function loadBorrowRecords() {
   }
 }
 
-// 归还图书
+// 归还完库存和借阅记录都变了，两个都要重新拉一次
 async function handleReturn(row: BorrowRecord) {
   try {
     await ElMessageBox.confirm(
@@ -314,7 +297,7 @@ async function handleReturn(row: BorrowRecord) {
   }
 }
 
-// 封面上传前校验
+// 封面只收图片，且不超过 5MB
 function beforeCoverUpload(file: File) {
   const isImage = file.type.startsWith('image/')
   const isLt5M = file.size / 1024 / 1024 < 5
@@ -329,9 +312,8 @@ function beforeCoverUpload(file: File) {
   return true
 }
 
-// 处理封面上传
 function handleCoverUpload(options: any) {
-  // Mock：模拟上传成功
+  // 没有后端，读成 base64 直接显示
   const reader = new FileReader()
   reader.onload = (e) => {
     if (bookInfo.value) {
@@ -342,7 +324,7 @@ function handleCoverUpload(options: any) {
   reader.readAsDataURL(options.file)
 }
 
-// 附件上传前校验
+// 附件比封面宽松，放到 20MB
 function beforeFileUpload(file: File) {
   const isLt20M = file.size / 1024 / 1024 < 20
   if (!isLt20M) {
@@ -352,7 +334,6 @@ function beforeFileUpload(file: File) {
   return true
 }
 
-// 处理附件上传
 function handleFileUpload(options: any) {
   const file = options.file
   attachments.value.push({
@@ -365,16 +346,13 @@ function handleFileUpload(options: any) {
   ElMessage.success('附件上传成功')
 }
 
-// 预览附件
 function handlePreview(row: AttachmentItem) {
   if (row.mimeType === 'application/pdf' || row.name.toLowerCase().endsWith('.pdf')) {
-    // PDF 文件：用新窗口打开预览
     const blobUrl = URL.createObjectURL(row.content)
     window.open(blobUrl, '_blank')
-    // 延迟释放 URL（新窗口加载后）
+    // 新窗口把文件加载完要点时间，revoke 早了会白屏，所以等一分钟
     setTimeout(() => URL.revokeObjectURL(blobUrl), 60000)
   } else {
-    // 其他格式（Word等）：提示下载后查看
     ElMessageBox.alert(
       '该格式不支持在线预览，请下载后使用对应软件打开查看。',
       '无法预览',
@@ -383,7 +361,7 @@ function handlePreview(row: AttachmentItem) {
   }
 }
 
-// 下载附件（Blob 下载，保留真实文件格式）
+// 造个 a 标签点一下触发下载，文件名保留原来的扩展名
 function handleDownload(row: AttachmentItem) {
   const blobUrl = URL.createObjectURL(row.content)
   const link = document.createElement('a')
@@ -396,7 +374,6 @@ function handleDownload(row: AttachmentItem) {
   ElMessage.success('开始下载')
 }
 
-// 删除附件
 async function handleDeleteAttachment(row: AttachmentItem) {
   try {
     await ElMessageBox.confirm(`确定要删除附件《${row.name}》吗？`, '删除确认', {

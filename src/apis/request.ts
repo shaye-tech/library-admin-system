@@ -1,7 +1,4 @@
-/**
- * 网络请求封装与 API 接口
- * 包含 axios 实例、拦截器、Mock 适配、所有业务 API
- */
+// 接口层，所有请求都从这里走。VITE_USE_MOCK 打开时直接读 src/mock 的本地数据
 import axios, { type AxiosInstance, type AxiosRequestConfig, type InternalAxiosRequestConfig, type AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 import { getToken, removeToken } from '@/utils'
@@ -14,17 +11,15 @@ import type {
   LoginParams, UserInfo, LoginResult
 } from '@/types'
 
-// 是否启用 Mock 模式
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
 
-// 创建 axios 实例
 const service: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 15000,
   headers: { 'Content-Type': 'application/json;charset=utf-8' }
 })
 
-// ==================== 请求拦截器 ====================
+// 请求拦截器，有 token 就带上
 service.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getToken()
@@ -39,11 +34,11 @@ service.interceptors.request.use(
   }
 )
 
-// ==================== 响应拦截器 ====================
+// 响应拦截器，把业务码和 HTTP 状态码的错误统一处理掉
 service.interceptors.response.use(
   (response: AxiosResponse) => {
     const res = response.data
-    // 登录接口错误交给登录页弹窗处理
+    // 登录失败不在这里弹窗，丢给登录页自己提示
     const isLoginRequest = response.config.url?.includes('/auth/login')
     if (isLoginRequest && res.code !== 200) {
       return Promise.reject(new Error(res.message || '登录失败'))
@@ -89,7 +84,7 @@ service.interceptors.response.use(
   }
 )
 
-// ==================== Mock 请求适配 ====================
+// Mock 模式下没有真实后端，这里按 url 和 method 把请求分给 mockService
 async function mockRequest(config: AxiosRequestConfig): Promise<any> {
   const url = config.url || ''
   const method = (config.method || 'get').toLowerCase()
@@ -184,7 +179,6 @@ async function mockRequest(config: AxiosRequestConfig): Promise<any> {
   return { code: 200, message: 'success', data: null }
 }
 
-// ==================== 基础请求方法 ====================
 export function request<T = any>(config: AxiosRequestConfig): Promise<T> {
   if (USE_MOCK) {
     return mockRequest(config) as Promise<T>
@@ -208,7 +202,6 @@ export function del<T = any>(url: string, config?: AxiosRequestConfig): Promise<
   return request<T>({ ...config, url, method: 'delete' })
 }
 
-// ==================== 认证 API ====================
 export function login(data: LoginParams): Promise<ApiResponse<LoginResult>> {
   return post<ApiResponse<LoginResult>>('/auth/login', data)
 }
@@ -217,7 +210,6 @@ export function logout(): Promise<ApiResponse<null>> {
   return post<ApiResponse<null>>('/auth/logout')
 }
 
-// ==================== 图书 API ====================
 export function getBookList(params: BookQueryParams): Promise<ApiResponse<PageResult<Book>>> {
   return get<ApiResponse<PageResult<Book>>>('/book/list', params)
 }
@@ -258,7 +250,6 @@ export function returnBook(recordId: number): Promise<ApiResponse<BorrowRecord>>
   return post<ApiResponse<BorrowRecord>>('/borrow/return', { recordId })
 }
 
-// ==================== 读者 API ====================
 export function getReaderList(params: ReaderQueryParams): Promise<ApiResponse<PageResult<Reader>>> {
   return get<ApiResponse<PageResult<Reader>>>('/reader/list', params)
 }
@@ -283,7 +274,6 @@ export function batchDeleteReaders(ids: number[]): Promise<ApiResponse<null>> {
   return post<ApiResponse<null>>('/reader/batch-delete', { ids })
 }
 
-// ==================== 角色 API ====================
 export function getRoleList(params: RoleQueryParams): Promise<ApiResponse<PageResult<Role>>> {
   return get<ApiResponse<PageResult<Role>>>('/role/list', params)
 }
@@ -308,7 +298,6 @@ export function getPermissionTree(): Promise<ApiResponse<PermissionNode[]>> {
   return get<ApiResponse<PermissionNode[]>>('/role/permission-tree')
 }
 
-// ==================== 用户密码管理 API ====================
 export function getUserListForManage(): Promise<ApiResponse<UserInfo[]>> {
   return get<ApiResponse<UserInfo[]>>('/user/manage-list')
 }

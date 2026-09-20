@@ -1,5 +1,4 @@
 <template>
-  <!-- 角色新增/编辑表单弹窗（含权限树） -->
   <el-dialog
     v-model="visible"
     :title="isEdit ? '编辑角色' : '新增角色'"
@@ -40,7 +39,6 @@
           show-word-limit
         />
       </el-form-item>
-      <!-- 权限树选择 -->
       <el-form-item label="权限配置" prop="permissionIds">
         <div class="permission-tree-container">
           <div class="tree-toolbar">
@@ -69,10 +67,7 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 角色新增/编辑表单复用组件
- * 包含 el-tree 树形权限选择、权限勾选联动与合法性校验
- */
+// 角色表单，比图书和读者的多了棵树用来勾权限
 import { ref, reactive, watch, computed, onMounted } from 'vue'
 import { ElMessage, type FormInstance, type FormRules, type TreeInstance } from 'element-plus'
 import { addRole, updateRole, getPermissionTree } from '@/apis/request'
@@ -98,10 +93,8 @@ const formRef = ref<FormInstance>()
 const treeRef = ref<TreeInstance>()
 const submitLoading = ref(false)
 
-// 权限树数据
 const permissionTreeData = ref<PermissionNode[]>([])
 
-// 已选权限数量
 const checkedCount = ref(0)
 
 const formData = reactive<RoleFormData>({
@@ -133,7 +126,6 @@ const formRules: FormRules = {
   ]
 }
 
-// 加载权限树
 async function loadPermissionTree() {
   const res: any = await getPermissionTree()
   if (res.code === 200) {
@@ -141,32 +133,27 @@ async function loadPermissionTree() {
   }
 }
 
-// 权限勾选变化（联动处理）
+// 勾选变化同步到表单。父节点只勾中一半时不在 checkedKeys 里，要单独把半选的加上
 function handleCheckChange() {
   const checkedKeys = treeRef.value?.getCheckedKeys(false) as number[]
   const halfCheckedKeys = treeRef.value?.getHalfCheckedKeys() as number[]
-  // 包含半选节点的父节点（父节点权限联动）
   formData.permissionIds = [...checkedKeys, ...halfCheckedKeys]
   checkedCount.value = checkedKeys.length
-  // 触发表单校验
   formRef.value?.validateField('permissionIds')
 }
 
-// 全选
 function checkAll() {
   const allKeys = getAllKeys(permissionTreeData.value)
   treeRef.value?.setCheckedKeys(allKeys)
   handleCheckChange()
 }
 
-// 全不选
 function uncheckAll() {
   treeRef.value?.setCheckedKeys([])
   formData.permissionIds = []
   checkedCount.value = 0
 }
 
-// 获取所有节点ID
 function getAllKeys(nodes: PermissionNode[]): number[] {
   let keys: number[] = []
   nodes.forEach((node) => {
@@ -183,7 +170,7 @@ watch(() => props.visible, (val) => {
     if (props.isEdit && props.formData) {
       Object.assign(formData, props.formData)
       checkedCount.value = props.formData.permissionIds?.length || 0
-      // 延迟设置树的选中状态（等待树渲染完成）
+      // 树这会儿还没渲染完，setCheckedKeys 得等一帧再调
       setTimeout(() => {
         treeRef.value?.setCheckedKeys(props.formData!.permissionIds || [])
       }, 100)
@@ -206,7 +193,7 @@ async function handleSubmit() {
   if (!formRef.value) return
   try {
     await formRef.value.validate()
-    // 合法性校验：权限不能为空
+    // 表单规则里其实已经拦了一道，提交前再确认一次
     if (formData.permissionIds.length === 0) {
       ElMessage.warning('请至少选择一项权限')
       return

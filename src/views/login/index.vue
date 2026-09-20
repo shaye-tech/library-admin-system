@@ -1,23 +1,18 @@
 <template>
-  <!-- 登录页面 -->
   <div class="login-container">
-    <!-- 背景装饰 -->
     <div class="login-bg">
       <div class="bg-circle bg-circle-1"></div>
       <div class="bg-circle bg-circle-2"></div>
       <div class="bg-circle bg-circle-3"></div>
     </div>
 
-    <!-- 登录卡片 -->
     <div class="login-card">
-      <!-- 标题区域 -->
       <div class="login-header">
         <el-icon :size="48" color="#409eff"><Reading /></el-icon>
         <h1 class="login-title">校园图书管理系统</h1>
         <p class="login-subtitle">Library Management System</p>
       </div>
 
-      <!-- 登录表单 -->
       <el-form
         ref="loginFormRef"
         :model="loginForm"
@@ -25,7 +20,6 @@
         class="login-form"
         @keyup.enter="handleLogin"
       >
-        <!-- 用户名 -->
         <el-form-item prop="username">
           <el-input
             v-model="loginForm.username"
@@ -36,7 +30,6 @@
           />
         </el-form-item>
 
-        <!-- 密码 -->
         <el-form-item prop="password">
           <el-input
             v-model="loginForm.password"
@@ -49,12 +42,10 @@
           />
         </el-form-item>
 
-        <!-- 记住我 -->
         <div class="login-options">
           <el-checkbox v-model="loginForm.remember">记住我</el-checkbox>
         </div>
 
-        <!-- 登录按钮 -->
         <el-form-item>
           <el-button
             type="primary"
@@ -68,7 +59,6 @@
         </el-form-item>
       </el-form>
 
-      <!-- 测试账号提示 -->
       <div class="login-tips">
         <el-alert type="info" :closable="false" show-icon>
           <template #title>
@@ -78,7 +68,6 @@
       </div>
     </div>
 
-    <!-- 页脚 -->
     <div class="login-footer">
       <p>© 2026 校园图书管理系统 | Web前端设计与开发实训</p>
     </div>
@@ -86,10 +75,7 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 登录页面组件
- * 实现登录表单校验、用户登录、状态持久化、登录后路由跳转
- */
+// 登录页。"记住我"是把账号密码塞进 localStorage，没做加密
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
@@ -100,20 +86,17 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-// 记住我存储键名
 const REMEMBER_KEY = 'library_remember_info'
 
-// 表单引用
 const loginFormRef = ref<FormInstance>()
 
-// 登录表单数据（默认空，从 localStorage 读取记住的用户名和密码）
 const loginForm = reactive({
   username: '',
   password: '',
   remember: false
 })
 
-// 页面加载时恢复记住的用户名和密码
+// 打开页面时把上次记住的账号密码填回去
 onMounted(() => {
   const savedInfo = localStorage.getItem(REMEMBER_KEY)
   if (savedInfo) {
@@ -123,12 +106,11 @@ onMounted(() => {
       loginForm.password = password || ''
       loginForm.remember = true
     } catch {
-      // 解析失败则忽略
+      // 存的东西格式不对就当没存过
     }
   }
 })
 
-// 表单校验规则
 const loginRules: FormRules = {
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -140,20 +122,17 @@ const loginRules: FormRules = {
   ]
 }
 
-// 处理登录
 async function handleLogin() {
   if (!loginFormRef.value) return
   try {
-    // 表单校验
     await loginFormRef.value.validate()
-    // 调用登录接口
     const success = await userStore.login({
       username: loginForm.username,
       password: loginForm.password
     })
     if (success) {
       ElMessage.success('登录成功')
-      // 记住我：勾选则保存用户名和密码，不勾选则清除
+      // 勾了就存，没勾就把之前存的清掉
       if (loginForm.remember) {
         localStorage.setItem(REMEMBER_KEY, JSON.stringify({
           username: loginForm.username,
@@ -162,12 +141,12 @@ async function handleLogin() {
       } else {
         localStorage.removeItem(REMEMBER_KEY)
       }
-      // 登录成功后跳转到目标页面或首页
+      // 之前被守卫打发过来的时候带了 redirect，登完回原来那页
       const redirect = (route.query.redirect as string) || '/'
       router.push(redirect)
     }
   } catch (error: any) {
-    // 登录失败弹出窗口提示
+    // 失败用 alert 弹窗，顶部提示容易一闪而过看不清
     const errorMsg = error?.message || '登录失败，请检查用户名和密码'
     ElMessageBox.alert(errorMsg, '登录失败', {
       confirmButtonText: '确定',

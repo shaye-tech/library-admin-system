@@ -1,7 +1,5 @@
 <template>
-  <!-- 角色权限管理页 -->
   <div class="role-list-container">
-    <!-- 操作按钮区域 -->
     <el-card class="table-card" shadow="never">
       <div class="table-toolbar">
         <div class="toolbar-left">
@@ -17,7 +15,6 @@
         </div>
       </div>
 
-      <!-- 角色表格 -->
       <el-table v-loading="loading" :data="tableData" border stripe style="width: 100%">
         <el-table-column :resizable="false" type="index" label="序号" width="55" align="center" />
         <el-table-column :resizable="false" prop="roleName" label="角色名称" width="120" />
@@ -47,7 +44,6 @@
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
       <div class="pagination-area">
         <el-pagination
           v-model:current-page="queryParams.pageNum"
@@ -62,7 +58,6 @@
       </div>
     </el-card>
 
-    <!-- 新增/编辑角色弹窗（复用表单组件，含权限树） -->
     <role-form
       v-model:visible="dialogVisible"
       :form-data="currentRow"
@@ -70,7 +65,6 @@
       @success="getList"
     />
 
-    <!-- 查看权限弹窗 -->
     <el-dialog v-model="permissionDialogVisible" title="角色权限详情" width="500px">
       <div class="permission-view">
         <p><strong>角色名称：</strong>{{ currentRole?.roleName }}</p>
@@ -90,7 +84,6 @@
       </template>
     </el-dialog>
 
-    <!-- 用户密码管理弹窗 -->
     <el-dialog v-model="userManageVisible" title="用户密码管理" width="700px" :close-on-click-modal="false">
       <el-table :data="userList" border stripe v-loading="userManageLoading">
         <el-table-column type="index" label="序号" width="55" align="center" />
@@ -122,7 +115,6 @@
       </template>
     </el-dialog>
 
-    <!-- 修改用户密码弹窗 -->
     <el-dialog v-model="changePwdVisible" title="修改用户密码" width="420px" :close-on-click-modal="false">
       <el-form ref="changePwdFormRef" :model="changePwdForm" :rules="changePwdRules" label-width="90px">
         <el-form-item label="用户名">
@@ -144,11 +136,7 @@
 </template>
 
 <script setup lang="ts">
-/**
- * 角色权限管理页
- * 实现角色基础管理、树形权限选择、权限联动与合法性校验
- * 是 RBAC 权限体系的核心模块
- */
+// 角色管理。用户密码管理也放在这一页，没单独开菜单
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Refresh, Lock } from '@element-plus/icons-vue'
@@ -163,18 +151,15 @@ const dialogVisible = ref(false)
 const isEdit = ref(false)
 const currentRow = ref<Role | null>(null)
 
-// 查看权限弹窗
 const permissionDialogVisible = ref(false)
 const currentRole = ref<Role | null>(null)
 const permissionTreeData = ref<PermissionNode[]>([])
 
-// 用户密码管理
 const userManageVisible = ref(false)
 const userManageLoading = ref(false)
 const userList = ref<UserInfo[]>([])
 const showPwdIds = ref<number[]>([])
 
-// 修改用户密码
 const changePwdVisible = ref(false)
 const changePwdLoading = ref(false)
 const changePwdFormRef = ref<FormInstance>()
@@ -209,7 +194,6 @@ const queryParams = reactive<RoleQueryParams>({
   pageSize: 10
 })
 
-// 获取角色列表
 async function getList() {
   loading.value = true
   try {
@@ -223,7 +207,6 @@ async function getList() {
   }
 }
 
-// 加载权限树
 async function loadPermissionTree() {
   const res: any = await getPermissionTree()
   if (res.code === 200) {
@@ -253,13 +236,11 @@ function handleEdit(row: Role) {
   dialogVisible.value = true
 }
 
-// 查看权限
 function handleViewPermission(row: Role) {
   currentRole.value = row
   permissionDialogVisible.value = true
 }
 
-// 获取角色名称
 function getRoleName(role: string): string {
   const map: Record<string, string> = {
     admin: '超级管理员',
@@ -269,7 +250,6 @@ function getRoleName(role: string): string {
   return map[role] || role
 }
 
-// 获取角色标签类型
 function getRoleTagType(role: string): string {
   const map: Record<string, string> = {
     admin: 'danger',
@@ -279,14 +259,13 @@ function getRoleTagType(role: string): string {
   return map[role] || ''
 }
 
-// 打开用户密码管理
 async function openUserManage() {
   userManageVisible.value = true
   showPwdIds.value = []
   await loadUserList()
 }
 
-// 加载用户列表
+// 用户列表里带着密码字段，表格里默认打码，点"查看"才显示
 async function loadUserList() {
   userManageLoading.value = true
   try {
@@ -299,7 +278,6 @@ async function loadUserList() {
   }
 }
 
-// 切换密码显示
 function togglePwd(row: UserInfo) {
   const index = showPwdIds.value.indexOf(row.id)
   if (index > -1) {
@@ -309,7 +287,6 @@ function togglePwd(row: UserInfo) {
   }
 }
 
-// 打开修改密码弹窗
 function openChangePwd(row: UserInfo) {
   currentPwdUser.value = row
   changePwdForm.newPassword = ''
@@ -317,7 +294,6 @@ function openChangePwd(row: UserInfo) {
   changePwdVisible.value = true
 }
 
-// 提交修改密码
 async function submitChangePwd() {
   if (!changePwdFormRef.value || !currentPwdUser.value) return
   try {
@@ -333,13 +309,13 @@ async function submitChangePwd() {
       loadUserList()
     }
   } catch {
-    // 校验失败
+    // 校验没过，错误提示由 el-form 自己显示
   } finally {
     changePwdLoading.value = false
   }
 }
 
-// 删除角色（高危操作确认）
+// 超管角色不给删，其他的删之前先确认一下
 async function handleDelete(row: Role) {
   if (row.roleCode === 'admin') {
     ElMessage.warning('超级管理员角色不可删除')
